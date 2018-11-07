@@ -12,3 +12,25 @@ module.exports = app;
 var server = app.listen(process.env.PORT || port, () => {
   console.log("Server working!")
 });
+
+
+// Router
+var router = express.Router()
+
+
+router.get('/', (req, resp) => {
+  response200OK({
+    message: "Welcome to my NoSQL's API app!"}, resp)
+})
+
+// Methods
+
+/**
+* Sends a 200 OK HTTP response to client
+* @param body of the response
+* @param resp server response
+*/
+function response200OK(body, resp) {
+  resp.status(200);
+  resp.send(resp);
+}
