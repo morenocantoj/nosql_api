@@ -1,0 +1,31 @@
+{
+  "name": "nosql_api",
+  "version": "1.0.0",
+  "description": "API REST in NodeJS for managing NoSQL databases",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/morenocantoj/nosql_api.git"
+  },
+  "keywords": [
+    "node",
+    "javascript",
+    "nosql",
+    "mongodb"
+  ],
+  "author": "Jaume Moreno Cantó",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/morenocantoj/nosql_api/issues"
+  },
+  "homepage": "https://github.com/morenocantoj/nosql_api#readme"
+}
