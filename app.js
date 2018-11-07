@@ -14,12 +14,20 @@ var port = 3000;
 
 // Router
 var router = express.Router()
-
+app.use('/api', router)
 
 app.get('/', (req, resp) => {
   console.log("GET /")
   response200OK({
-    message: "Welcome to my NoSQL's API app!"}, resp)
+    message: "Welcome to my NoSQL's API app!",
+    api_url: getFullUrl(req) + "/api"}, resp)
+})
+
+router.get('/', (req, resp) => {
+  console.log("GET /api")
+  response200OK({
+    login_url: "Not implemented yet!"
+  }, resp)
 })
 
 module.exports = app;
@@ -40,4 +48,13 @@ var server = app.listen(process.env.PORT || port, () => {
 function response200OK(body, resp) {
   resp.status(200);
   resp.send(body);
+}
+
+/**
+* Get current url with protocol and port
+* @param req current request
+*/
+function getFullUrl(req) {
+  var fullUrl = req.protocol + '://' + req.get('host');
+  return fullUrl
 }
