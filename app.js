@@ -3,6 +3,7 @@ var express = require('express');
 var bodyparser = require('body-parser');
 var url = require('url');
 var cors = require('cors');
+var mongo = require('mongodb');
 
 var app = express();
 app.use(cors());
@@ -11,6 +12,19 @@ app.use(bodyparser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 var port = 3000;
+
+// Database
+const mongo_uri = "mongodb+srv://jaume:cDYnAOegaJGLZSs6@csgo-stats-aq1qv.mongodb.net/test?retryWrites=true"
+
+mongo.connect(mongo_uri, (err, client) => {
+  if (err) {
+    console.error("Error connecting MongoDB database!");
+
+  } else {
+    console.log("Connected to MongoDB database")
+    client.close()
+  }
+})
 
 // Router
 var router = express.Router()
