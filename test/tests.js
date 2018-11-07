@@ -23,4 +23,14 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+  it('GET API Home "/api"', (done) => {
+    supertest(app)
+    .get('/api')
+    .expect(200)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.login_url, null)
+      done()
+    })
+  })
 })
