@@ -2,9 +2,25 @@
 var express = require('express');
 var bodyparser = require('body-parser');
 var url = require('url');
+var cors = require('cors');
 
 var app = express();
+app.use(cors());
+app.use(bodyparser.json() );       // to support JSON-encoded bodies
+app.use(bodyparser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+}));
 var port = 3000;
+
+// Router
+var router = express.Router()
+
+
+app.get('/', (req, resp) => {
+  console.log("GET /")
+  response200OK({
+    message: "Welcome to my NoSQL's API app!"}, resp)
+})
 
 module.exports = app;
 
@@ -13,15 +29,6 @@ var server = app.listen(process.env.PORT || port, () => {
   console.log("Server working!")
 });
 
-
-// Router
-var router = express.Router()
-
-
-router.get('/', (req, resp) => {
-  response200OK({
-    message: "Welcome to my NoSQL's API app!"}, resp)
-})
 
 // Methods
 
@@ -32,5 +39,5 @@ router.get('/', (req, resp) => {
 */
 function response200OK(body, resp) {
   resp.status(200);
-  resp.send(resp);
+  resp.send(body);
 }
