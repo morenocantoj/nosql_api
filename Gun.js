@@ -1,7 +1,10 @@
 "use strict"
 
+const uuid = require('uuid/v4')
+
 class Gun {
   constructor() {
+    this.uuid = uuid()
     this.name = null
     this.cost = null
     this.damage = null
@@ -9,6 +12,14 @@ class Gun {
     this.side = null
     this.rpm = null
     this.penetration = null
+  }
+
+  set uuid(uuid) {
+    this._uuid = uuid
+  }
+
+  get uuid() {
+    return this._uuid
   }
 
   set name(name) {
