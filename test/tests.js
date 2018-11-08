@@ -59,6 +59,6 @@ describe('NoSQL´s API Test suite', function() {
   })
   it('Create Gun object with non null UUID', () => {
     var uuidGun = new Gun()
-    assert.notEqual(uuidGun.uuid, null)
+    assert.notEqual(uuidGun._id, null)
   })
 })

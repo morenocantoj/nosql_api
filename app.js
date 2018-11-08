@@ -44,6 +44,10 @@ router.get('/', (req, resp) => {
   }, resp)
 })
 
+router.post('/guns', (req, resp) => {
+  console.log("POST /api/guns")
+})
+
 module.exports = app;
 
 // Server engagement

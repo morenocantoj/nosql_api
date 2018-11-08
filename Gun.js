@@ -4,7 +4,7 @@ const uuid = require('uuid/v4')
 
 class Gun {
   constructor() {
-    this.uuid = uuid()
+    this._id = uuid()
     this.name = null
     this.cost = null
     this.damage = null
@@ -14,12 +14,12 @@ class Gun {
     this.penetration = null
   }
 
-  set uuid(uuid) {
-    this._uuid = uuid
+  set _id(uuid) {
+    this.__id = uuid
   }
 
-  get uuid() {
-    return this._uuid
+  get _id() {
+    return this.__id
   }
 
   set name(name) {
