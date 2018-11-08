@@ -1,9 +1,14 @@
+"use strict"
+
 // Dependencies
 var express = require('express');
 var bodyparser = require('body-parser');
 var url = require('url');
 var cors = require('cors');
 var database = require('./database')
+
+// Classes
+var Gun = require('./Gun')
 
 var app = express();
 app.use(cors());
