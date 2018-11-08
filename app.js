@@ -6,6 +6,7 @@ var bodyparser = require('body-parser');
 var url = require('url');
 var cors = require('cors');
 var database = require('./database')
+var responses = require('./responses')
 
 // Classes
 var Gun = require('./Gun')
@@ -31,14 +32,14 @@ app.use('/api', router)
 
 app.get('/', (req, resp) => {
   console.log("GET /")
-  response200OK({
+  responses.OK200({
     message: "Welcome to my NoSQL's API app!",
     api_url: getFullUrl(req) + "/api"}, resp)
 })
 
 router.get('/', (req, resp) => {
   console.log("GET /api")
-  response200OK({
+  responses.OK200({
     login_url: "Not implemented yet!"
   }, resp)
 })
@@ -52,16 +53,6 @@ var server = app.listen(process.env.PORT || port, () => {
 
 
 // Methods
-
-/**
-* Sends a 200 OK HTTP response to client
-* @param body of the response
-* @param resp server response
-*/
-function response200OK(body, resp) {
-  resp.status(200);
-  resp.send(body);
-}
 
 /**
 * Get current url with protocol and port
