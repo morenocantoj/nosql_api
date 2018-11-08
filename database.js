@@ -13,9 +13,33 @@ return module.exports = {
 
       } else {
         console.log("Connected to MongoDB database")
-        callback(client)
+        callback(client.db("csgo-stats"))
+        
+        client.close()
         return null
       }
+    })
+  },
+
+  /**
+  * Inserts a new gun record into Guns collection
+  * @param gun new gun to insert
+  * @param callback function
+  */
+  insertGun: (gun, callback) => {
+    module.exports.connectMongo((client) => {
+      if (client == null) return callback(false)
+
+      // Insert new collection
+      client.collection("guns").insertOne(gun, (err, res) => {
+        if (err) return callback(false)
+
+        // Else, new gun is inserted successfully
+        console.log("New gun inserted!")
+
+        callback(true)
+        return null
+      })
     })
   }
 }

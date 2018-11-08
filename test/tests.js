@@ -59,6 +59,41 @@ describe('NoSQL´s API Test suite', function() {
   })
   it('Create Gun object with non null UUID', () => {
     var uuidGun = new Gun()
-    assert.notEqual(uuidGun._id, null)
+    assert.notEqual(uuidGun.id, null)
+  })
+  it('POST /api/guns for create a Gun expected 400 Bad Request', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({name: "MP9", cost: 1250})
+    .set('Content-Type', 'application/json')
+    .expect(400)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.error, null)
+      assert.notEqual(result.body.parameters_list, null)
+      done()
+    })
+  })
+  it('POST /api/guns for create a Gun expected 201 Created', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+    	name: "MP9",
+    	cost: 1250,
+    	damage: 389,
+    	type: "SMG",
+    	side: "CT/T",
+    	rpm: 857,
+    	penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.gun_url, null)
+      done()
+    })
   })
 })
