@@ -1,8 +1,14 @@
+"use strict"
+
 // Dependencies
 var express = require('express');
 var bodyparser = require('body-parser');
 var url = require('url');
 var cors = require('cors');
+var database = require('./database')
+
+// Classes
+var Gun = require('./Gun')
 
 var app = express();
 app.use(cors());
@@ -11,6 +17,13 @@ app.use(bodyparser.urlencoded({     // to support URL-encoded bodies
   extended: true
 }));
 var port = 3000;
+
+// Database
+database.connectMongo((client) => {
+  if (client) {
+    client.close()
+  }
+})
 
 // Router
 var router = express.Router()
