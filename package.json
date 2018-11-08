@@ -1,7 +1,7 @@
 {
   "name": "nosql_api",
   "version": "1.0.0",
-  "description": "API REST in NodeJS for managing NoSQL databases",
+  "description": "API REST in NodeJS for managing CSGO stats with NoSQL databases",
   "main": "app.js",
   "dependencies": {
     "body-parser": "^1.18.3",
