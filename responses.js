@@ -36,5 +36,16 @@ return module.exports = {
   ServerError500: function(resp) {
     resp.status(500)
     resp.send({error: "Oops! We had an error in server side"})
+  },
+
+  /**
+  * Sends a 404 Not Fund response to client
+  * It's a new response, nobody knows about it
+  * No, really, even Mozilla foundation didn´t know about it
+  * @param resp server response
+  */
+  NotFound404: function(resp) {
+    resp.status(404)
+    resp.send({error: "Sorry, we didn´t find what you´ve been looking for!"})
   }
 }

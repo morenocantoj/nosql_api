@@ -1,6 +1,7 @@
 "use strict"
 
 const uuid = require('uuid/v4')
+var database = require('./database')
 
 class Gun {
   constructor() {
@@ -76,6 +77,36 @@ class Gun {
 
   get penetration() {
     return this._penetration
+  }
+
+  /**
+  * Retrieves all gun data from database
+  * Gun id needs to be setted before
+  * @param callback function
+  */
+  retrieveFromDatabase(callback) {
+    if (!this.id) return callback(false)
+
+    // Retrieve gun from database
+    database.getGun(this, (gunData) => {
+      if (gunData) {
+        // Set data to current object
+        this.cost = gunData._cost
+        this.name = gunData._name
+        this.damage = gunData._damage
+        this.type = gunData._type
+        this.side = gunData._side
+        this.rpm = gunData._rpm
+        this.penetration = gunData._penetration
+
+        callback(true)
+        return null
+
+      } else {
+        callback(false)
+        return null
+      }
+    })
   }
 }
 

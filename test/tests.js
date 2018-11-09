@@ -1,6 +1,7 @@
 var app = require('../app');
 var supertest = require('supertest');
 var assert = require('assert');
+const uuid = require('uuid/v4')
 
 // External dependencies
 var Gun = require('../Gun')
@@ -96,6 +97,8 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+
+  var selected_gun
   it('GET /api/guns for retrieve all guns expected 200 OK', (done) => {
     supertest(app)
     .get('/api/guns')
@@ -104,6 +107,28 @@ describe('NoSQL´s API Test suite', function() {
       chk(err, done)
       assert.notEqual(result.body.guns, null)
       assert.notEqual(result.body.guns[0].gun_url, null)
+      selected_gun = result.body.guns[0]
+      done()
+    })
+  })
+  it('GET /api/guns/123 for retrieve one gun expected 404 Not Fund', (done) => {
+    supertest(app)
+    .get('/api/guns/123')
+    .expect(404, done)
+  })
+  it('GET /api/guns/:id for retrieve one gun expected 200 OK', (done) => {
+    supertest(app)
+    .get('/api/guns/'+selected_gun._id)
+    .expect(200)
+    .end((err, result) => {
+      chk(err, done)
+      assert.equal(result.body.gun._name, "MP9")
+      assert.equal(result.body.gun._cost, 1250)
+      assert.equal(result.body.gun._penetration, 50)
+      assert.equal(result.body.gun._damage, 389)
+      assert.equal(result.body.gun._type, "SMG")
+      assert.equal(result.body.gun._side, "CT/T")
+      assert.equal(result.body.gun._rpm, 857)
       done()
     })
   })

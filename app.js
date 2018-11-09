@@ -87,6 +87,36 @@ router.get('/guns', (req, resp) => {
   })
 })
 
+router.get('/guns/:id', (req, resp) => {
+  console.log("GET /api/guns/{id}")
+
+  var gunId = req.params.id
+  if (gunId) {
+    // Create a new gun from existing id
+    var gun = new Gun()
+    gun.id = gunId
+
+    // Check if gun exists in database
+    gun.retrieveFromDatabase((response) => {
+      if (response) {
+        responses.OK200({
+          gun: gun
+        }, resp)
+
+      } else {
+        // Not found
+        responses.NotFound404(resp)
+      }
+    })
+
+  } else {
+    // Missing parameter, not reached because API enters /api/guns route
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
 /* -- Server engagement -- */
 module.exports = app;
 

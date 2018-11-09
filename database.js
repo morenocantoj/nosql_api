@@ -59,5 +59,24 @@ return module.exports = {
         return null
       })
     })
+  },
+
+  /**
+  * Retrieves one gun data searching it by his id
+  * @param gun with id
+  * @param callback function
+  */
+  getGun: (gun, callback) => {
+    module.exports.connectMongo((client) => {
+      if (client == null) return callback(false)
+
+      // Retrieve the gun
+      client.collection("guns").findOne({_id : gun.id}, (err, result) => {
+        if (err) throw err
+
+        callback(result)
+        return null
+      })
+    })
   }
 }
