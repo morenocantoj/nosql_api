@@ -96,4 +96,15 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+  it('GET /api/guns for retrieve all guns expected 200 OK', (done) => {
+    supertest(app)
+    .get('/api/guns')
+    .expect(200)
+    .end((err, result) => {
+      chk(err, done)
+      assert.notEqual(result.body.guns, null)
+      assert.notEqual(result.body.guns[0].gun_url, null)
+      done()
+    })
+  })
 })

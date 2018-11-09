@@ -65,6 +65,28 @@ router.post('/guns', (req, resp) => {
   }
 })
 
+router.get('/guns', (req, resp) => {
+  console.log("GET /api/guns")
+
+  // Get all guns existing in database
+  database.getAllGuns((guns) => {
+    if (guns) {
+      // Append gun URL to each element of array
+      guns.forEach((element) => {
+        element.gun_url = getFullUrl(req) + "/guns/" + element._id
+      })
+
+      responses.OK200({
+        guns: guns
+      }, resp)
+
+    } else {
+      // Error retrieving data
+      responses.ServerError500(resp)
+    }
+  })
+})
+
 /* -- Server engagement -- */
 module.exports = app;
 

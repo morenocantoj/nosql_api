@@ -14,7 +14,7 @@ return module.exports = {
       } else {
         console.log("Connected to MongoDB database")
         callback(client.db("csgo-stats"))
-        
+
         client.close()
         return null
       }
@@ -38,6 +38,24 @@ return module.exports = {
         console.log("New gun inserted!")
 
         callback(true)
+        return null
+      })
+    })
+  },
+
+  /**
+  * Retrieves all guns in a record
+  * @param callback function
+  */
+  getAllGuns: (callback) => {
+    module.exports.connectMongo((client) => {
+      if (client == null) return callback(false)
+
+      // Retrieve all guns existing
+      client.collection("guns").find({}).toArray((err, res) => {
+        if (err) return callback(false)
+
+        callback(res)
         return null
       })
     })
