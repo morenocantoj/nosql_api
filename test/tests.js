@@ -132,4 +132,20 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+  it('DELETE /api/guns/123 expected 404 Not Found', (done) => {
+    supertest(app)
+    .delete('/api/guns/123')
+    .expect(404, done)
+  })
+  it('DELETE /api/guns/:id expected 200 OK', (done) => {
+    supertest(app)
+    .delete('/api/guns/'+selected_gun._id)
+    .expect(200)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.guns_url, null)
+      done()
+    })
+  })
 })

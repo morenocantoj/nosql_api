@@ -117,6 +117,47 @@ router.get('/guns/:id', (req, resp) => {
   }
 })
 
+router.delete('/guns/:id', (req, resp) => {
+  console.log("DELETE /api/guns/{id}")
+
+  var gunId = req.params.id
+  if (gunId) {
+    // Create a new gun from existing id
+    var gun = new Gun()
+    gun.id = gunId
+
+    // Check if gun exists in database
+    gun.retrieveFromDatabase((response) => {
+      if (response) {
+
+        // Delete gun
+        gun.delete((deleted) => {
+          if (deleted) {
+            responses.OK200({
+              info: "Gun deleted successfully!",
+              guns_url: getFullUrl(req) + "/api/guns"
+            }, resp)
+
+          } else {
+            // Error ocurred in some point of deleting process
+            responses.ServerError500(resp)
+          }
+        })
+
+      } else {
+        // Not found
+        responses.NotFound404(resp)
+      }
+    })
+
+  } else {
+    // Missing id parameter
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
 /* -- Server engagement -- */
 module.exports = app;
 

@@ -16,6 +16,7 @@ return module.exports = {
         callback(client.db("csgo-stats"))
 
         client.close()
+        console.log("Client to MongoDB closed")
         return null
       }
     })
@@ -75,6 +76,25 @@ return module.exports = {
         if (err) throw err
 
         callback(result)
+        return null
+      })
+    })
+  },
+
+  /**
+  * Deletes one gun from collection
+  * @param gun object
+  * @param callback function
+  */
+  deleteGun: (gun, callback) => {
+    module.exports.connectMongo((client) => {
+      if (client == null) return callback(false)
+
+      // Delete the gun
+      client.collection("guns").deleteOne({_id: gun.id}, (err, result) => {
+        if (err) throw err
+
+        callback(true)
         return null
       })
     })

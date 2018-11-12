@@ -108,6 +108,24 @@ class Gun {
       }
     })
   }
+
+  /**
+  * Deletes an object even, and also does it in database
+  * @param callback function callback
+  */
+  delete(callback) {
+    if (this.id) {
+      // Try to delete gun in database if exists
+      database.deleteGun(this, (deleted) => {
+        if (!deleted) return callback(false)
+      })
+    }
+
+    // Delete gun properties
+    delete this
+    callback(true)
+    return null
+  }
 }
 
 module.exports = Gun
