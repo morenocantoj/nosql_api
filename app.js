@@ -19,14 +19,7 @@ app.use(bodyparser.urlencoded({     // to support URL-encoded bodies
 }));
 var port = 3000;
 
-// Database
-database.connectMongo((client) => {
-  if (client) {
-    client.close()
-  }
-})
-
-// Router
+/* -- Router -- */
 var router = express.Router()
 app.use('/api', router)
 
@@ -44,15 +37,136 @@ router.get('/', (req, resp) => {
   }, resp)
 })
 
+router.post('/guns', (req, resp) => {
+  console.log("POST /api/guns")
+  var newGun = getGunFromParameters(req)
+
+  if (newGun != null) {
+    database.insertGun(newGun, (result) => {
+      if (result) {
+        // New gun saved!
+        responses.Created201({
+          info: "New gun created!",
+          created: true,
+          gun_url: getFullUrl(req) + "/guns/" + newGun.id }, resp)
+
+      } else {
+        // Database error
+        responses.ServerError500(resp)
+      }
+    })
+
+  } else {
+    // Parameter missing!
+    responses.BadRequest400({
+      error: "All parameters are obligatory, check which one is missing",
+      parameters_list: ['name', 'cost', 'damage', 'type', 'side', 'rpm', 'penetration']
+    }, resp)
+  }
+})
+
+router.get('/guns', (req, resp) => {
+  console.log("GET /api/guns")
+
+  // Get all guns existing in database
+  database.getAllGuns((guns) => {
+    if (guns) {
+      // Append gun URL to each element of array
+      guns.forEach((element) => {
+        element.gun_url = getFullUrl(req) + "/guns/" + element._id
+      })
+
+      responses.OK200({
+        guns: guns
+      }, resp)
+
+    } else {
+      // Error retrieving data
+      responses.ServerError500(resp)
+    }
+  })
+})
+
+router.get('/guns/:id', (req, resp) => {
+  console.log("GET /api/guns/{id}")
+
+  var gunId = req.params.id
+  if (gunId) {
+    // Create a new gun from existing id
+    var gun = new Gun()
+    gun.id = gunId
+
+    // Check if gun exists in database
+    gun.retrieveFromDatabase((response) => {
+      if (response) {
+        responses.OK200({
+          gun: gun
+        }, resp)
+
+      } else {
+        // Not found
+        responses.NotFound404(resp)
+      }
+    })
+
+  } else {
+    // Missing parameter, not reached because API enters /api/guns route
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
+router.delete('/guns/:id', (req, resp) => {
+  console.log("DELETE /api/guns/{id}")
+
+  var gunId = req.params.id
+  if (gunId) {
+    // Create a new gun from existing id
+    var gun = new Gun()
+    gun.id = gunId
+
+    // Check if gun exists in database
+    gun.retrieveFromDatabase((response) => {
+      if (response) {
+
+        // Delete gun
+        gun.delete((deleted) => {
+          if (deleted) {
+            responses.OK200({
+              info: "Gun deleted successfully!",
+              guns_url: getFullUrl(req) + "/api/guns"
+            }, resp)
+
+          } else {
+            // Error ocurred in some point of deleting process
+            responses.ServerError500(resp)
+          }
+        })
+
+      } else {
+        // Not found
+        responses.NotFound404(resp)
+      }
+    })
+
+  } else {
+    // Missing id parameter
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
+/* -- Server engagement -- */
 module.exports = app;
 
-// Server engagement
 var server = app.listen(process.env.PORT || port, () => {
   console.log("Server working!")
 });
 
 
-// Methods
+/* -- Methods -- */
 
 /**
 * Get current url with protocol and port
@@ -61,4 +175,29 @@ var server = app.listen(process.env.PORT || port, () => {
 function getFullUrl(req) {
   var fullUrl = req.protocol + '://' + req.get('host');
   return fullUrl
+}
+
+/**
+* Gets all gun parameters from request and return them in a Gun object
+* @param req HTTP request
+*/
+function getGunFromParameters(request) {
+  // Check if any parameter is missing
+  if (request.body.name == undefined || request.body.cost == undefined || request.body.damage == undefined ||
+      request.body.type == undefined || request.body.side == undefined || request.body.side == undefined ||
+      request.body.rpm == undefined || request.body.penetration == undefined) {
+
+    return null
+  }
+
+  var gun = new Gun()
+  gun.name = request.body.name
+  gun.cost = request.body.cost
+  gun.damage = request.body.damage
+  gun.type = request.body.type
+  gun.side = request.body.side
+  gun.rpm = request.body.rpm
+  gun.penetration = request.body.penetration
+
+  return gun
 }

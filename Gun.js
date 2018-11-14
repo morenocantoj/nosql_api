@@ -1,10 +1,11 @@
 "use strict"
 
 const uuid = require('uuid/v4')
+var database = require('./database')
 
 class Gun {
   constructor() {
-    this.uuid = uuid()
+    this.id = uuid()
     this.name = null
     this.cost = null
     this.damage = null
@@ -14,12 +15,12 @@ class Gun {
     this.penetration = null
   }
 
-  set uuid(uuid) {
-    this._uuid = uuid
+  set id(uuid) {
+    this._id = uuid
   }
 
-  get uuid() {
-    return this._uuid
+  get id() {
+    return this._id
   }
 
   set name(name) {
@@ -76,6 +77,54 @@ class Gun {
 
   get penetration() {
     return this._penetration
+  }
+
+  /**
+  * Retrieves all gun data from database
+  * Gun id needs to be setted before
+  * @param callback function
+  */
+  retrieveFromDatabase(callback) {
+    if (!this.id) return callback(false)
+
+    // Retrieve gun from database
+    database.getGun(this, (gunData) => {
+      if (gunData) {
+        // Set data to current object
+        this.cost = gunData._cost
+        this.name = gunData._name
+        this.damage = gunData._damage
+        this.type = gunData._type
+        this.side = gunData._side
+        this.rpm = gunData._rpm
+        this.penetration = gunData._penetration
+
+        callback(true)
+        return null
+
+      } else {
+        callback(false)
+        return null
+      }
+    })
+  }
+
+  /**
+  * Deletes an object even, and also does it in database
+  * @param callback function callback
+  */
+  delete(callback) {
+    if (this.id) {
+      // Try to delete gun in database if exists
+      database.deleteGun(this, (deleted) => {
+        if (!deleted) return callback(false)
+      })
+    }
+
+    // Delete gun properties
+    delete this
+    callback(true)
+    return null
   }
 }
 
