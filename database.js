@@ -22,6 +22,20 @@ return module.exports = {
     })
   },
 
+  // Connect to database with async/await
+  connectMongoAsync: async function() {
+    var client
+    try {
+      client = await mongo.connect(mongo_uri, {useNewUrlParser: true})
+    } catch (err) {
+      console.error("Error connecting MongoDB database!");
+      throw err
+    }
+
+    console.log("Connected to MongoDB database")
+    return client
+  },
+
   /**
   * Inserts a new gun record into Guns collection
   * @param gun new gun to insert
@@ -98,5 +112,31 @@ return module.exports = {
         return null
       })
     })
+  },
+
+  /**
+  * Inserts one gun to database
+  * @param user object
+  */
+  insertUser: async function(user) {
+    // Get client first
+    client = await module.exports.connectMongoAsync()
+
+    let response
+    try {
+      // Insert a new user
+      response = await client.db("csgo-stats").collection("users").insertOne(user)
+
+    } catch(err) {
+      console.log("Error inserting a new user!")
+      return false
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+
+    console.log("New user inserted successfully!")
+    return true
   }
 }

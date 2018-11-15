@@ -10,6 +10,7 @@ var responses = require('./responses')
 
 // Classes
 var Gun = require('./Gun')
+var User = require('./User')
 
 var app = express();
 app.use(cors());
@@ -37,6 +38,7 @@ router.get('/', (req, resp) => {
   }, resp)
 })
 
+// Guns management
 router.post('/guns', (req, resp) => {
   console.log("POST /api/guns")
   var newGun = getGunFromParameters(req)
@@ -158,6 +160,34 @@ router.delete('/guns/:id', (req, resp) => {
   }
 })
 
+// User management
+router.post('/users', async (req, resp) => {
+  console.log("POST /users")
+  var newUser = getUserFromParameters(req)
+
+  if (newUser != null) {
+    var inserted = await newUser.save()
+
+    if (inserted) {
+      responses.Created201({
+        info: "New user created",
+        created: true,
+        user_url: getFullUrl(req) + "/api/users/" + newUser.id
+      }, resp)
+
+    } else {
+      // Server error
+      responses.ServerError500(resp)
+    }
+
+  } else {
+    // Parameter missing!
+    responses.BadRequest400({
+      error: "Username and password are required!"
+    }, resp)
+  }
+})
+
 /* -- Server engagement -- */
 module.exports = app;
 
@@ -200,4 +230,19 @@ function getGunFromParameters(request) {
   gun.penetration = request.body.penetration
 
   return gun
+}
+
+/**
+* Gets all user parameters from request and return them in a User object
+* @param req HTTP request
+*/
+function getUserFromParameters(request){
+  // Check obligatory parameters missing
+  if (request.body.username == undefined || request.body.password == undefined) return null
+
+  var user = new User(request.body.username, request.body.password)
+  if (request.body.steam_profile) user.steam_profile = request.body.steam_profile
+
+  return user
+
 }

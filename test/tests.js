@@ -5,6 +5,7 @@ const uuid = require('uuid/v4')
 
 // External dependencies
 var Gun = require('../Gun')
+var User = require('../User')
 
 function chk(err, done) {
   if (err) {
@@ -45,7 +46,7 @@ describe('NoSQL´s API Test suite', function() {
     assert.equal(nullGun.damage, null)
     assert.equal(nullGun.penetration, null)
   })
-  it('Create Gun object and set some fields not equal to null', () => {
+  it('Create Gun object and set some fields not equal to null', (done) => {
     var nullGun = new Gun()
     assert.equal(nullGun.name, null)
     assert.equal(nullGun.cost, null)
@@ -57,10 +58,12 @@ describe('NoSQL´s API Test suite', function() {
     nullGun.name = 'MP9'
     assert.equal(nullGun.cost, 1250)
     assert.equal(nullGun.name, 'MP9')
+    done()
   })
-  it('Create Gun object with non null UUID', () => {
+  it('Create Gun object with non null UUID', (done) => {
     var uuidGun = new Gun()
     assert.notEqual(uuidGun.id, null)
+    done()
   })
   it('POST /api/guns for create a Gun expected 400 Bad Request', (done) => {
     supertest(app)
@@ -147,5 +150,51 @@ describe('NoSQL´s API Test suite', function() {
       assert.notEqual(result.body.guns_url, null)
       done()
     })
+  })
+  it('Create User object with non null UUID, username and password', (done) => {
+    var uuidUser = new User('pashaBiceps', 'thegreatjaroslaw')
+    assert.notEqual(uuidUser.id, null)
+    assert.equal(uuidUser.username, 'pashaBiceps')
+    assert.equal(uuidUser.password, 'thegreatjaroslaw')
+    done()
+  })
+  it('Create User object and set some fields', (done) => {
+    var uuidUser = new User('pashaBiceps', 'thegreatjaroslaw')
+    assert.notEqual(uuidUser.id, null)
+    assert.equal(uuidUser.username, 'pashaBiceps')
+    assert.equal(uuidUser.password, 'thegreatjaroslaw')
+    uuidUser.username = 'papaBiceps'
+    uuidUser.otp_enable = true
+    uuidUser.otp_secret = 'secret'
+    assert.equal(uuidUser.username, 'papaBiceps')
+    assert.equal(uuidUser.otp_enable, true)
+    assert.equal(uuidUser.otp_secret, 'secret')
+    done()
+  })
+  it('Create User object and insert it into database', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "morenocantoj",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+      done()
+    })
+  })
+  it('Create User object expected 400', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "morenocantoj",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400, done)
   })
 })
