@@ -162,7 +162,7 @@ router.delete('/guns/:id', (req, resp) => {
 
 // User management
 router.post('/users', async (req, resp) => {
-  console.log("POST /users")
+  console.log("POST /api/users")
   var newUser = getUserFromParameters(req)
 
   if (newUser != null) {
@@ -178,6 +178,35 @@ router.post('/users', async (req, resp) => {
     } else {
       // Server error
       responses.ServerError500(resp)
+    }
+
+  } else {
+    // Parameter missing!
+    responses.BadRequest400({
+      error: "Username and password are required!"
+    }, resp)
+  }
+})
+
+router.post('/login', async (req, resp) => {
+  console.log("POST /api/login")
+  var user = getUserFromParameters(req)
+
+  if (user != null) {
+    // Attempt to login
+    var login = await user.checkInDatabase()
+
+    if (login) {
+      responses.OK200({
+        info: "You're logged in successfully!",
+        user_url: getFullUrl(req) + "/api/users/" + user.id
+      }, resp)
+
+    } else {
+      // Credentials error
+      responses.Unauthorized401({
+        error: "Username or password not valid"
+      }, resp)
     }
 
   } else {

@@ -197,4 +197,39 @@ describe('NoSQL´s API Test suite', function() {
     .set('Content-Type', 'application/json')
     .expect(400, done)
   })
+  it('User login expect 401', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "wrongusername",
+      password: "wrongpassword"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(401, done)
+  })
+  it('User login expect 400', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "elfary"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400, done)
+  })
+  it('User login expect 200 OK', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "elfary",
+      password: "secret"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(200)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+      done()
+    })
+  })
 })

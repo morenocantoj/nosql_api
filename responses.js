@@ -47,5 +47,15 @@ return module.exports = {
   NotFound404: function(resp) {
     resp.status(404)
     resp.send({error: "Sorry, we didn´t find what you´ve been looking for!"})
+  },
+
+  /**
+  * Sends a 401 Unauthorized HTTP response to client
+  * @param body of the response
+  * @param resp server response
+  */
+  Unauthorized401: function(body, resp) {
+    resp.status(401)
+    resp.send(body)
   }
 }

@@ -29,6 +29,14 @@ class User {
     return this._username
   }
 
+  set password(password) {
+    this._password = password
+  }
+
+  get password() {
+    return this._password
+  }
+
   set steam_profile(steam_profile) {
     this._steam_profile = steam_profile
   }
@@ -58,6 +66,13 @@ class User {
   */
   async save() {
     return await database.insertUser(this)
+  }
+
+  /**
+  * Checks current user in database
+  */
+  async checkInDatabase() {
+    return await database.checkUser(this.username, this.password)
   }
 }
 

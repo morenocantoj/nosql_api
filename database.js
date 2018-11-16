@@ -138,5 +138,30 @@ return module.exports = {
 
     console.log("New user inserted successfully!")
     return true
-  }
+  },
+
+  /**
+  * Checks username and password in database
+  * @param username nickname of user to compare
+  * @param password password of user to compare
+  */
+  checkUser: async function(username, password) {
+    client = await module.exports.connectMongoAsync()
+
+    let response
+    try {
+      // Find user and check password too
+      response = await client.db("csgo-stats").collection("users").findOne({_username: username, _password: password})
+
+      return (response != null ? true : false)
+
+    } catch(err) {
+      console.log("Error retrieving data from database!")
+      throw err
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+  },
 }
