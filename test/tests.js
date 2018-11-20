@@ -216,6 +216,23 @@ describe('NoSQL´s API Test suite', function() {
     .set('Content-Type', 'application/json')
     .expect(400, done)
   })
+  it('Create User object and insert it into database II', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "elfary",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+      done()
+    })
+  })
   it('User login expect 200 OK', (done) => {
     supertest(app)
     .post('/api/login')

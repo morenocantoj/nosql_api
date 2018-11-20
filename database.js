@@ -1,4 +1,6 @@
 var mongo = require('mongodb');
+var bcrypt = require('bcrypt')
+const saltRounds = 10;
 const mongo_uri = "mongodb+srv://jaume:cDYnAOegaJGLZSs6@csgo-stats-aq1qv.mongodb.net/test?retryWrites=true"
 
 return module.exports = {
@@ -123,9 +125,21 @@ return module.exports = {
     client = await module.exports.connectMongoAsync()
 
     let response
+    let passwordHash
+
     try {
+      // Apply bcrypt to users password
+      passwordHash = await bcrypt.hash(user.password, saltRounds)
+
       // Insert a new user
-      response = await client.db("csgo-stats").collection("users").insertOne(user)
+      response = await client.db("csgo-stats").collection("users").insertOne({
+        _id: user.id,
+        _username: user.username,
+        _password: passwordHash,
+        _steam_profile: user.steam_profile,
+        _otp_enable: user.otp_enable,
+        _otp_secret: user.otp_secret
+      })
 
     } catch(err) {
       console.log("Error inserting a new user!")
@@ -149,11 +163,18 @@ return module.exports = {
     client = await module.exports.connectMongoAsync()
 
     let response
-    try {
-      // Find user and check password too
-      response = await client.db("csgo-stats").collection("users").findOne({_username: username, _password: password})
+    let passwordCheck
 
-      return (response != null ? true : false)
+    try {
+      // Find user
+      response = await client.db("csgo-stats").collection("users").findOne({_username: username})
+
+      // If response is null there's no user
+      if(response == null) return false
+
+      // Check password
+      passwordCheck = await bcrypt.compare(password, response._password)
+      return passwordCheck
 
     } catch(err) {
       console.log("Error retrieving data from database!")
