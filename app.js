@@ -217,6 +217,47 @@ router.post('/login', async (req, resp) => {
   }
 })
 
+router.delete('/users/:id', async (req, resp) => {
+  console.log("DELETE /api/users/{id}")
+  var userId = req.params.id
+
+  if (userId) {
+    try {
+      // Create user object and assign id
+      var user = new User()
+      user.id = userId
+
+      // Delete user object
+      let deleted = await user.delete()
+
+      if (deleted.err == 'COLL_NO_EXISTS') {
+        // User no exists in database
+        responses.NotFound404(resp)
+
+      } else if (deleted.err == 'DB_FAIL') {
+        // Failed to connect to database
+        responses.ServerError500(resp)
+
+      } else {
+        // User deleted successfully
+        responses.OK200({
+          info: 'User deleted successfully'
+        }, resp)
+      }
+
+    } catch (err) {
+      throw err
+      responses.ServerError500(resp)
+    }
+
+  } else {
+    // Missing user id parameter
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
 /* -- Server engagement -- */
 module.exports = app;
 

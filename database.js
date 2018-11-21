@@ -32,6 +32,7 @@ return module.exports = {
     } catch (err) {
       console.error("Error connecting MongoDB database!");
       throw err
+      return { err: 'DB_FAIL' }
     }
 
     console.log("Connected to MongoDB database")
@@ -122,7 +123,7 @@ return module.exports = {
   */
   insertUser: async function(user) {
     // Get client first
-    client = await module.exports.connectMongoAsync()
+    var client = await module.exports.connectMongoAsync()
 
     let response
     let passwordHash
@@ -160,7 +161,7 @@ return module.exports = {
   * @param password password of user to compare
   */
   checkUser: async function(username, password) {
-    client = await module.exports.connectMongoAsync()
+    var client = await module.exports.connectMongoAsync()
 
     let response
     let passwordCheck
@@ -179,6 +180,29 @@ return module.exports = {
     } catch(err) {
       console.log("Error retrieving data from database!")
       throw err
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+  },
+
+  /**
+  * Deletes this user in database if exists
+  * @param user user to delete
+  */
+  deleteUser: async function(user) {
+    var client = await module.exports.connectMongoAsync()
+
+    try {
+      // Delete user if exists
+      let response = await client.db("csgo-stats").collection("users").deleteOne({_id: user.id})
+      return response.deletedCount > 0 ? true : { err: 'COLL_NO_EXISTS' }
+
+    } catch (err) {
+      console.log("Error deleting data from database")
+      console.log(err)
+      return { err : 'DB_FAIL' }
 
     } finally {
       // Close db client
