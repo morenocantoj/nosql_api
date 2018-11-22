@@ -168,7 +168,19 @@ router.post('/users', async (req, resp) => {
   if (newUser != null) {
     var inserted = await newUser.save()
 
-    if (inserted) {
+    if (inserted.err == 'DUPL_REC') {
+      // Parameter missing!
+      responses.BadRequest400({
+        error: "That user already exists in database!"
+      }, resp)
+
+    } else if(inserted.err == "MIN_LENGTH") {
+      // Parameter missing!
+      responses.BadRequest400({
+        error: "Username and password need to be, at least, 4 characters!"
+      }, resp)
+
+    } else if (inserted == true) {
       responses.Created201({
         info: "New user created",
         created: true,
@@ -260,11 +272,17 @@ router.delete('/users/:id', async (req, resp) => {
 
 /* -- Server engagement -- */
 module.exports = app;
+database.initDatabase((dbInit) => {
+  if (dbInit) {
+    var server = app.listen(process.env.PORT || port, () => {
+      console.log("Server listening!")
+    });
 
-var server = app.listen(process.env.PORT || port, () => {
-  console.log("Server working!")
-});
-
+  } else {
+    console.log("Error initiating database!!!")
+    process.exit(22)
+  }
+})
 
 /* -- Methods -- */
 

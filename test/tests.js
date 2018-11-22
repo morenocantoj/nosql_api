@@ -241,6 +241,36 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   }).timeout(4000)
+  it('Insert an existing user expects 400 Bad Request', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "elfary",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.error, null)
+      done()
+    })
+  })
+  it('Insert an user with an username with less than 4 characters expect 400 Bad Request', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "el",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.error, null)
+      done()
+    })
+  })
   it('User login expect 200 OK', (done) => {
     supertest(app)
     .post('/api/login')
