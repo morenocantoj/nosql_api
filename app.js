@@ -7,9 +7,11 @@ var url = require('url');
 var cors = require('cors');
 var database = require('./database')
 var responses = require('./responses')
+const auth_token = require('./auth-token')
 
 // Classes
 var Gun = require('./Gun')
+var User = require('./User')
 
 var app = express();
 app.use(cors());
@@ -30,6 +32,31 @@ app.get('/', (req, resp) => {
     api_url: getFullUrl(req) + "/api"}, resp)
 })
 
+// Auth middleware
+async function checkAuth(req, resp, next) {
+  var bearerToken;
+  var bearerHeader = req.headers["authorization"];
+
+  if (typeof bearerHeader !== 'undefined') {
+      var bearer = bearerHeader.split(" ");
+      bearerToken = bearer[1];
+
+      let tokenValid = await auth_token.checkToken(bearerToken)
+      if (tokenValid) {
+        // Continue the request
+        next()
+
+      } else {
+        // Token not valid
+        responses.Unauthorized401({
+          err: "You must pass a valid token for get this request"
+        }, resp)
+      }
+  } else {
+      responses.Denied403(resp)
+  }
+}
+
 router.get('/', (req, resp) => {
   console.log("GET /api")
   responses.OK200({
@@ -37,7 +64,8 @@ router.get('/', (req, resp) => {
   }, resp)
 })
 
-router.post('/guns', (req, resp) => {
+// Guns management
+router.post('/guns', checkAuth, (req, resp) => {
   console.log("POST /api/guns")
   var newGun = getGunFromParameters(req)
 
@@ -117,7 +145,7 @@ router.get('/guns/:id', (req, resp) => {
   }
 })
 
-router.delete('/guns/:id', (req, resp) => {
+router.delete('/guns/:id', checkAuth, (req, resp) => {
   console.log("DELETE /api/guns/{id}")
 
   var gunId = req.params.id
@@ -158,13 +186,133 @@ router.delete('/guns/:id', (req, resp) => {
   }
 })
 
+// User management
+router.post('/users', async (req, resp) => {
+  console.log("POST /api/users")
+  var newUser = getUserFromParameters(req)
+
+  if (newUser != null) {
+    var inserted = await newUser.save()
+
+    if (inserted.err == 'DUPL_REC') {
+      // Parameter missing!
+      responses.BadRequest400({
+        error: "That user already exists in database!"
+      }, resp)
+
+    } else if(inserted.err == "MIN_LENGTH") {
+      // Parameter missing!
+      responses.BadRequest400({
+        error: "Username and password need to be, at least, 4 characters!"
+      }, resp)
+
+    } else if (inserted == true) {
+      responses.Created201({
+        info: "New user created",
+        created: true,
+        user_url: getFullUrl(req) + "/api/users/" + newUser.id
+      }, resp)
+
+    } else {
+      // Server error
+      responses.ServerError500(resp)
+    }
+
+  } else {
+    // Parameter missing!
+    responses.BadRequest400({
+      error: "Username and password are required!"
+    }, resp)
+  }
+})
+
+router.post('/login', async (req, resp) => {
+  console.log("POST /api/login")
+  var user = getUserFromParameters(req)
+
+  if (user != null) {
+    // Attempt to login
+    var login = await user.checkInDatabase()
+
+    if (login) {
+      // Create a token and return it into response
+      let token = auth_token.createToken(user)
+
+      responses.OK200({
+        info: "You're logged in successfully!",
+        token: token,
+        user_url: getFullUrl(req) + "/api/users/" + user.id
+      }, resp)
+
+    } else {
+      // Credentials error
+      responses.Unauthorized401({
+        error: "Username or password not valid"
+      }, resp)
+    }
+
+  } else {
+    // Parameter missing!
+    responses.BadRequest400({
+      error: "Username and password are required!"
+    }, resp)
+  }
+})
+
+router.delete('/users/:id', checkAuth, async (req, resp) => {
+  console.log("DELETE /api/users/{id}")
+  var userId = req.params.id
+
+  if (userId) {
+    try {
+      // Create user object and assign id
+      var user = new User()
+      user.id = userId
+
+      // Delete user object
+      let deleted = await user.delete()
+
+      if (deleted.err == 'COLL_NO_EXISTS') {
+        // User no exists in database
+        responses.NotFound404(resp)
+
+      } else if (deleted.err == 'DB_FAIL') {
+        // Failed to connect to database
+        responses.ServerError500(resp)
+
+      } else {
+        // User deleted successfully
+        responses.OK200({
+          info: 'User deleted successfully'
+        }, resp)
+      }
+
+    } catch (err) {
+      throw err
+      responses.ServerError500(resp)
+    }
+
+  } else {
+    // Missing user id parameter
+    responses.BadRequest400({
+      error: "Missing id parameter!"
+    }, resp)
+  }
+})
+
 /* -- Server engagement -- */
 module.exports = app;
+database.initDatabase((dbInit) => {
+  if (dbInit) {
+    var server = app.listen(process.env.PORT || port, () => {
+      console.log("Server listening!")
+    });
 
-var server = app.listen(process.env.PORT || port, () => {
-  console.log("Server working!")
-});
-
+  } else {
+    console.log("Error initiating database!!!")
+    process.exit(22)
+  }
+})
 
 /* -- Methods -- */
 
@@ -200,4 +348,19 @@ function getGunFromParameters(request) {
   gun.penetration = request.body.penetration
 
   return gun
+}
+
+/**
+* Gets all user parameters from request and return them in a User object
+* @param req HTTP request
+*/
+function getUserFromParameters(request){
+  // Check obligatory parameters missing
+  if (request.body.username == undefined || request.body.password == undefined) return null
+
+  var user = new User(request.body.username, request.body.password)
+  if (request.body.steam_profile) user.steam_profile = request.body.steam_profile
+
+  return user
+
 }

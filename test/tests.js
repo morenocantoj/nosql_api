@@ -5,6 +5,7 @@ const uuid = require('uuid/v4')
 
 // External dependencies
 var Gun = require('../Gun')
+var User = require('../User')
 
 function chk(err, done) {
   if (err) {
@@ -37,6 +38,46 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+  var user_selected_url2
+  it('Create User object and insert it into database II', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "elfary",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+
+      var parts = result.body.user_url.split('/');
+      user_selected_url2 = parts.pop() || parts.pop();  // handle potential trailing slash
+      done()
+    })
+  }).timeout(4000)
+  var tokenAuth
+  it('User login expect 200 OK', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "elfary",
+      password: "secret"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(200)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+      assert.notEqual(result.body.token, null)
+      tokenAuth = result.body.token
+      done()
+    })
+  }).timeout(4000)
   it('Create Gun object equal to null', () => {
     var nullGun = new Gun()
     assert.equal(nullGun.name, null)
@@ -44,8 +85,8 @@ describe('NoSQL´s API Test suite', function() {
     assert.equal(nullGun.type, null)
     assert.equal(nullGun.damage, null)
     assert.equal(nullGun.penetration, null)
-  })
-  it('Create Gun object and set some fields not equal to null', () => {
+  }).timeout(4000)
+  it('Create Gun object and set some fields not equal to null', (done) => {
     var nullGun = new Gun()
     assert.equal(nullGun.name, null)
     assert.equal(nullGun.cost, null)
@@ -57,15 +98,18 @@ describe('NoSQL´s API Test suite', function() {
     nullGun.name = 'MP9'
     assert.equal(nullGun.cost, 1250)
     assert.equal(nullGun.name, 'MP9')
-  })
-  it('Create Gun object with non null UUID', () => {
+    done()
+  }).timeout(4000)
+  it('Create Gun object with non null UUID', (done) => {
     var uuidGun = new Gun()
     assert.notEqual(uuidGun.id, null)
-  })
+    done()
+  }).timeout(4000)
   it('POST /api/guns for create a Gun expected 400 Bad Request', (done) => {
     supertest(app)
     .post('/api/guns')
     .send({name: "MP9", cost: 1250})
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .set('Content-Type', 'application/json')
     .expect(400)
     .end(function(err, result) {
@@ -74,7 +118,7 @@ describe('NoSQL´s API Test suite', function() {
       assert.notEqual(result.body.parameters_list, null)
       done()
     })
-  })
+  }).timeout(4000)
   it('POST /api/guns for create a Gun expected 201 Created', (done) => {
     supertest(app)
     .post('/api/guns')
@@ -87,6 +131,7 @@ describe('NoSQL´s API Test suite', function() {
     	rpm: 857,
     	penetration: 50.0
     })
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .set('Content-Type', 'application/json')
     .expect(201)
     .end(function(err, result) {
@@ -96,7 +141,7 @@ describe('NoSQL´s API Test suite', function() {
       assert.notEqual(result.body.gun_url, null)
       done()
     })
-  })
+  }).timeout(4000)
 
   var selected_gun
   it('GET /api/guns for retrieve all guns expected 200 OK', (done) => {
@@ -110,12 +155,12 @@ describe('NoSQL´s API Test suite', function() {
       selected_gun = result.body.guns[0]
       done()
     })
-  })
+  }).timeout(4000)
   it('GET /api/guns/123 for retrieve one gun expected 404 Not Fund', (done) => {
     supertest(app)
     .get('/api/guns/123')
     .expect(404, done)
-  })
+  }).timeout(4000)
   it('GET /api/guns/:id for retrieve one gun expected 200 OK', (done) => {
     supertest(app)
     .get('/api/guns/'+selected_gun._id)
@@ -131,15 +176,17 @@ describe('NoSQL´s API Test suite', function() {
       assert.equal(result.body.gun._rpm, 857)
       done()
     })
-  })
+  }).timeout(4000)
   it('DELETE /api/guns/123 expected 404 Not Found', (done) => {
     supertest(app)
     .delete('/api/guns/123')
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(404, done)
-  })
+  }).timeout(4000)
   it('DELETE /api/guns/:id expected 200 OK', (done) => {
     supertest(app)
     .delete('/api/guns/'+selected_gun._id)
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(200)
     .end(function(err, result) {
       chk(err, done)
@@ -147,5 +194,169 @@ describe('NoSQL´s API Test suite', function() {
       assert.notEqual(result.body.guns_url, null)
       done()
     })
+  }).timeout(4000)
+  it('Create User object with non null UUID, username and password', (done) => {
+    var uuidUser = new User('pashaBiceps', 'thegreatjaroslaw')
+    assert.notEqual(uuidUser.id, null)
+    assert.equal(uuidUser.username, 'pashaBiceps')
+    assert.equal(uuidUser.password, 'thegreatjaroslaw')
+    done()
+  }).timeout(4000)
+  it('Create User object and set some fields', (done) => {
+    var uuidUser = new User('pashaBiceps', 'thegreatjaroslaw')
+    assert.notEqual(uuidUser.id, null)
+    assert.equal(uuidUser.username, 'pashaBiceps')
+    assert.equal(uuidUser.password, 'thegreatjaroslaw')
+    uuidUser.username = 'papaBiceps'
+    uuidUser.otp_enable = true
+    uuidUser.otp_secret = 'secret'
+    assert.equal(uuidUser.username, 'papaBiceps')
+    assert.equal(uuidUser.otp_enable, true)
+    assert.equal(uuidUser.otp_secret, 'secret')
+    done()
+  }).timeout(4000)
+  var user_selected_url
+  it('Create User object and insert it into database', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "morenocantoj",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+
+      var parts = result.body.user_url.split('/');
+      user_selected_url = parts.pop() || parts.pop();  // handle potential trailing slash
+      done()
+    })
+  }).timeout(4000)
+  it('Create User object expected 400', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "morenocantoj",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400, done)
+  }).timeout(4000)
+  it('User login expect 401', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "wrongusername",
+      password: "wrongpassword"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(401, done)
+  }).timeout(4000)
+  it('User login expect 400', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "elfary"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400, done)
+  }).timeout(4000)
+  it('Insert an existing user expects 400 Bad Request', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "elfary",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.error, null)
+      done()
+    })
+  })
+  it('Insert an user with an username with less than 4 characters expect 400 Bad Request', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "el",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(400)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.error, null)
+      done()
+    })
+  })
+  it('Delete user expect Not Found 404', (done) => {
+    supertest(app)
+    .delete('/api/users/id-not-existing')
+    .set('Authorization', 'Bearer ' + tokenAuth)
+    .expect(404, done)
+  }).timeout(4000)
+  it('Delete user expect 200 OK', (done) => {
+    supertest(app)
+    .delete('/api/users/' + user_selected_url)
+    .set('Authorization', 'Bearer ' + tokenAuth)
+    .expect(200, done)
+  }).timeout(4000)
+  it('Delete user expect 200 OK II', (done) => {
+    supertest(app)
+    .delete('/api/users/' + user_selected_url2)
+    .set('Authorization', 'Bearer ' + tokenAuth)
+    .expect(200, done)
+  }).timeout(4000)
+  it('Create gun without Authorization header, expect 403', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+    	name: "MP9",
+    	cost: 1250,
+    	damage: 389,
+    	type: "SMG",
+    	side: "CT/T",
+    	rpm: 857,
+    	penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .expect(403, done)
+  })
+  it('Create gun with wrong Authorization header value, expect 401', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+    	name: "MP9",
+    	cost: 1250,
+    	damage: 389,
+    	type: "SMG",
+    	side: "CT/T",
+    	rpm: 857,
+    	penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .set('Authorization', 'Bearer wrongvalue')
+    .expect(401, done)
+  })
+  it('Create gun with null Authorization header value, expect 401', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+      name: "MP9",
+      cost: 1250,
+      damage: 389,
+      type: "SMG",
+      side: "CT/T",
+      rpm: 857,
+      penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .set('Authorization', 'Bearer')
+    .expect(401, done)
   })
 })

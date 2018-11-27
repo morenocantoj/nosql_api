@@ -1,7 +1,80 @@
 var mongo = require('mongodb');
+var bcrypt = require('bcrypt')
+const saltRounds = 10;
+
+// Database constants
 const mongo_uri = "mongodb+srv://jaume:cDYnAOegaJGLZSs6@csgo-stats-aq1qv.mongodb.net/test?retryWrites=true"
+const db_selected = "csgo-stats"
+
+/**
+* Manages database error thrown
+* @param err MongoDB thrown error object
+*/
+function manage_dberr(err) {
+  switch (err.code) {
+    case 11000:
+      // Duplicate insert record
+      return { err: 'DUPL_REC' }
+      break;
+    case 121:
+      // minLength not accomplished
+      return { err: 'MIN_LENGTH' }
+      break;
+    default:
+      // Default server error
+      return { err: 'DB_FAIL' }
+  }
+}
 
 return module.exports = {
+
+  /**
+  * Inits database collections and rules
+  */
+  initDatabase: function(callback) {
+    mongo.connect(mongo_uri, {useNewUrlParser: true}, (err, client) => {
+      if (client == null) return callback({ err: 'DB_FAIL' })
+
+      client.db(db_selected).createCollection("users", {
+        validator: {
+          $jsonSchema: {
+            bsonType: "object",
+            required: ["_id", "_username", "_password"],
+            properties: {
+              _username: {
+                bsonType: "string",
+                description: "must be an string, is required and must contain at least 4 characters",
+                minLength: 4,
+                maxLength: 255,
+              },
+              _password: {
+                bsonType: "string",
+                description: "must be an string between 4 and 24 characters",
+                minLength: 4
+              },
+              _steam_profile: {
+                bsonType: "string"
+              },
+              _otp_enable: {
+                bsonType: "bool"
+              },
+              _otp_secret: {
+                bsonType: "string"
+              }
+            }
+          }
+        }
+      }, (response) => {
+        client.db(db_selected).createCollection("guns", () => {
+          client.db(db_selected).collection('users').createIndex({ _username: 1 }, { unique: true }, (response) => {
+            client.close()
+            callback(true)
+            return null
+          });
+        })
+      })
+    })
+  },
 
   // Connect to database
   connectMongo: function(callback) {
@@ -20,6 +93,21 @@ return module.exports = {
         return null
       }
     })
+  },
+
+  // Connect to database with async/await
+  connectMongoAsync: async function() {
+    var client
+    try {
+      client = await mongo.connect(mongo_uri, {useNewUrlParser: true})
+    } catch (err) {
+      console.error("Error connecting MongoDB database!");
+      throw err
+      return { err: 'DB_FAIL' }
+    }
+
+    console.log("Connected to MongoDB database")
+    return client
   },
 
   /**
@@ -98,5 +186,98 @@ return module.exports = {
         return null
       })
     })
-  }
+  },
+
+  /**
+  * Inserts one gun to database
+  * @param user object
+  */
+  insertUser: async function(user) {
+    // Get client first
+    var client = await module.exports.connectMongoAsync()
+
+    let response
+    let passwordHash
+
+    try {
+      // Apply bcrypt to users password
+      passwordHash = await bcrypt.hash(user.password, saltRounds)
+
+      // Insert a new user
+      response = await client.db("csgo-stats").collection("users").insertOne({
+        _id: String(user.id),
+        _username: String(user.username),
+        _password: String(passwordHash),
+        _steam_profile: String(user.steam_profile),
+        _otp_enable: Boolean(user.otp_enable),
+        _otp_secret: String(user.otp_secret)
+      })
+
+    } catch(err) {
+      console.log("Error inserting a new user!")
+      return manage_dberr(err)
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+
+    console.log("New user inserted successfully!")
+    return true
+  },
+
+  /**
+  * Checks username and password in database
+  * @param username nickname of user to compare
+  * @param password password of user to compare
+  */
+  checkUser: async function(username, password) {
+    var client = await module.exports.connectMongoAsync()
+
+    let response
+    let passwordCheck
+
+    try {
+      // Find user
+      response = await client.db("csgo-stats").collection("users").findOne({_username: username})
+
+      // If response is null there's no user
+      if(response == null) return false
+
+      // Check password
+      passwordCheck = await bcrypt.compare(password, response._password)
+      return passwordCheck
+
+    } catch(err) {
+      console.log("Error retrieving data from database!")
+      throw err
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+  },
+
+  /**
+  * Deletes this user in database if exists
+  * @param user user to delete
+  */
+  deleteUser: async function(user) {
+    var client = await module.exports.connectMongoAsync()
+
+    try {
+      // Delete user if exists
+      let response = await client.db("csgo-stats").collection("users").deleteOne({_id: user.id})
+      return response.deletedCount > 0 ? true : { err: 'COLL_NO_EXISTS' }
+
+    } catch (err) {
+      console.log("Error deleting data from database")
+      console.log(err)
+      return { err : 'DB_FAIL' }
+
+    } finally {
+      // Close db client
+      client.close()
+    }
+  },
 }
