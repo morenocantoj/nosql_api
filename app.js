@@ -7,6 +7,7 @@ var url = require('url');
 var cors = require('cors');
 var database = require('./database')
 var responses = require('./responses')
+const auth_token = require('./auth-token')
 
 // Classes
 var Gun = require('./Gun')
@@ -31,6 +32,31 @@ app.get('/', (req, resp) => {
     api_url: getFullUrl(req) + "/api"}, resp)
 })
 
+// Auth middleware
+async function checkAuth(req, resp, next) {
+  var bearerToken;
+  var bearerHeader = req.headers["authorization"];
+
+  if (typeof bearerHeader !== 'undefined') {
+      var bearer = bearerHeader.split(" ");
+      bearerToken = bearer[1];
+
+      let tokenValid = await auth_token.checkToken(bearerToken)
+      if (tokenValid) {
+        // Continue the request
+        next()
+
+      } else {
+        // Token not valid
+        responses.Unauthorized401({
+          err: "You must pass a valid token for get this request"
+        }, resp)
+      }
+  } else {
+      responses.Denied403(resp)
+  }
+}
+
 router.get('/', (req, resp) => {
   console.log("GET /api")
   responses.OK200({
@@ -39,7 +65,7 @@ router.get('/', (req, resp) => {
 })
 
 // Guns management
-router.post('/guns', (req, resp) => {
+router.post('/guns', checkAuth, (req, resp) => {
   console.log("POST /api/guns")
   var newGun = getGunFromParameters(req)
 
@@ -119,7 +145,7 @@ router.get('/guns/:id', (req, resp) => {
   }
 })
 
-router.delete('/guns/:id', (req, resp) => {
+router.delete('/guns/:id', checkAuth, (req, resp) => {
   console.log("DELETE /api/guns/{id}")
 
   var gunId = req.params.id
@@ -209,8 +235,12 @@ router.post('/login', async (req, resp) => {
     var login = await user.checkInDatabase()
 
     if (login) {
+      // Create a token and return it into response
+      let token = auth_token.createToken(user)
+
       responses.OK200({
         info: "You're logged in successfully!",
+        token: token,
         user_url: getFullUrl(req) + "/api/users/" + user.id
       }, resp)
 
@@ -229,7 +259,7 @@ router.post('/login', async (req, resp) => {
   }
 })
 
-router.delete('/users/:id', async (req, resp) => {
+router.delete('/users/:id', checkAuth, async (req, resp) => {
   console.log("DELETE /api/users/{id}")
   var userId = req.params.id
 

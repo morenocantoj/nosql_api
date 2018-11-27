@@ -57,5 +57,10 @@ return module.exports = {
   Unauthorized401: function(body, resp) {
     resp.status(401)
     resp.send(body)
+  },
+
+  Denied403: function(resp) {
+    resp.status(403)
+    resp.send({error: "Access denied. Authorization header needed"})
   }
 }

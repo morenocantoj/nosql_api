@@ -38,6 +38,46 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
+  var user_selected_url2
+  it('Create User object and insert it into database II', (done) => {
+    supertest(app)
+    .post('/api/users')
+    .send({
+      username: "elfary",
+      password: "secret",
+    })
+    .set('Content-Type', 'application/json')
+    .expect(201)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.equal(result.body.created, true)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+
+      var parts = result.body.user_url.split('/');
+      user_selected_url2 = parts.pop() || parts.pop();  // handle potential trailing slash
+      done()
+    })
+  }).timeout(4000)
+  var tokenAuth
+  it('User login expect 200 OK', (done) => {
+    supertest(app)
+    .post('/api/login')
+    .send({
+      username: "elfary",
+      password: "secret"
+    })
+    .set('Content-Type', 'application/json')
+    .expect(200)
+    .end(function(err, result) {
+      chk(err, done)
+      assert.notEqual(result.body.info, null)
+      assert.notEqual(result.body.user_url, null)
+      assert.notEqual(result.body.token, null)
+      tokenAuth = result.body.token
+      done()
+    })
+  }).timeout(4000)
   it('Create Gun object equal to null', () => {
     var nullGun = new Gun()
     assert.equal(nullGun.name, null)
@@ -69,6 +109,7 @@ describe('NoSQL´s API Test suite', function() {
     supertest(app)
     .post('/api/guns')
     .send({name: "MP9", cost: 1250})
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .set('Content-Type', 'application/json')
     .expect(400)
     .end(function(err, result) {
@@ -90,6 +131,7 @@ describe('NoSQL´s API Test suite', function() {
     	rpm: 857,
     	penetration: 50.0
     })
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .set('Content-Type', 'application/json')
     .expect(201)
     .end(function(err, result) {
@@ -138,11 +180,13 @@ describe('NoSQL´s API Test suite', function() {
   it('DELETE /api/guns/123 expected 404 Not Found', (done) => {
     supertest(app)
     .delete('/api/guns/123')
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(404, done)
   }).timeout(4000)
   it('DELETE /api/guns/:id expected 200 OK', (done) => {
     supertest(app)
     .delete('/api/guns/'+selected_gun._id)
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(200)
     .end(function(err, result) {
       chk(err, done)
@@ -220,27 +264,6 @@ describe('NoSQL´s API Test suite', function() {
     .set('Content-Type', 'application/json')
     .expect(400, done)
   }).timeout(4000)
-  var user_selected_url2
-  it('Create User object and insert it into database II', (done) => {
-    supertest(app)
-    .post('/api/users')
-    .send({
-      username: "elfary",
-      password: "secret",
-    })
-    .set('Content-Type', 'application/json')
-    .expect(201)
-    .end(function(err, result) {
-      chk(err, done)
-      assert.equal(result.body.created, true)
-      assert.notEqual(result.body.info, null)
-      assert.notEqual(result.body.user_url, null)
-
-      var parts = result.body.user_url.split('/');
-      user_selected_url2 = parts.pop() || parts.pop();  // handle potential trailing slash
-      done()
-    })
-  }).timeout(4000)
   it('Insert an existing user expects 400 Bad Request', (done) => {
     supertest(app)
     .post('/api/users')
@@ -271,35 +294,69 @@ describe('NoSQL´s API Test suite', function() {
       done()
     })
   })
-  it('User login expect 200 OK', (done) => {
-    supertest(app)
-    .post('/api/login')
-    .send({
-      username: "elfary",
-      password: "secret"
-    })
-    .set('Content-Type', 'application/json')
-    .expect(200)
-    .end(function(err, result) {
-      chk(err, done)
-      assert.notEqual(result.body.info, null)
-      assert.notEqual(result.body.user_url, null)
-      done()
-    })
-  }).timeout(4000)
   it('Delete user expect Not Found 404', (done) => {
     supertest(app)
     .delete('/api/users/id-not-existing')
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(404, done)
   }).timeout(4000)
   it('Delete user expect 200 OK', (done) => {
     supertest(app)
     .delete('/api/users/' + user_selected_url)
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(200, done)
   }).timeout(4000)
   it('Delete user expect 200 OK II', (done) => {
     supertest(app)
     .delete('/api/users/' + user_selected_url2)
+    .set('Authorization', 'Bearer ' + tokenAuth)
     .expect(200, done)
   }).timeout(4000)
+  it('Create gun without Authorization header, expect 403', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+    	name: "MP9",
+    	cost: 1250,
+    	damage: 389,
+    	type: "SMG",
+    	side: "CT/T",
+    	rpm: 857,
+    	penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .expect(403, done)
+  })
+  it('Create gun with wrong Authorization header value, expect 401', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+    	name: "MP9",
+    	cost: 1250,
+    	damage: 389,
+    	type: "SMG",
+    	side: "CT/T",
+    	rpm: 857,
+    	penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .set('Authorization', 'Bearer wrongvalue')
+    .expect(401, done)
+  })
+  it('Create gun with null Authorization header value, expect 401', (done) => {
+    supertest(app)
+    .post('/api/guns')
+    .send({
+      name: "MP9",
+      cost: 1250,
+      damage: 389,
+      type: "SMG",
+      side: "CT/T",
+      rpm: 857,
+      penetration: 50.0
+    })
+    .set('Content-Type', 'application/json')
+    .set('Authorization', 'Bearer')
+    .expect(401, done)
+  })
 })
